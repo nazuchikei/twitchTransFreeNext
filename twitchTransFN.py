@@ -7,6 +7,7 @@ from twitchio.ext import commands
 from emoji import distinct_emoji_list
 import json, os, shutil, re, asyncio, deepl, sys, signal, tts, sound
 import database_controller as db # ja:既訳語データベース   en:Translation Database
+import re
 
 version = '2.7.16'
 '''
@@ -68,6 +69,10 @@ v2.0.5  : 裏技「翻訳先言語選択機能」実装
 v2.0.4  : 
 v2.0.3  : いろいろ実装した
 '''
+
+def contains_japanese(text: str) -> bool:
+    """日本語（ひらがな/カタカナ/漢字）が含まれているか判定"""
+    return re.search(r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]', text) is not None
 
 wakeup_message = f'TwitchTransFreeNext v.{version}, by さぁたん @saatan_pion and さよなりω @husband_sayonari_omega'
 
@@ -327,6 +332,12 @@ class Bot(commands.Bot):
         # １行が単芝だけだったら無視
         if message in Ignore_WWW:
             return
+
+        # 日本語が含まれていたら翻訳しない
+        if contains_japanese(message):
+            if config.Debug:
+                print(f"JP DETECTED → 翻訳スキップ: {message}")
+            return            
 
         # emoteの削除 --------------------------
         # エモート抜き出し
